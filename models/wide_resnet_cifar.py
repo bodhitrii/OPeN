@@ -116,6 +116,13 @@ def dar_bn(bn_layer, x, noise_mask):
             2D activation maps obtained from both natural images and noise images
         noise_mask: torch.BoolTensor of size: (N)
             Boolean 1D tensor that indicates which activation map is obtained from noise
+            
+        1) To prevent the noise instances from affecting the 1) affine parameters of bn_layer 2) running mean, variance of the bn_layer,
+        pass only the natural instances(no noise) as input of the batchnorm layer.
+        
+        2) Normalize noise instances using a batch_norm_with_adaptive_parameters function seperately.
+        
+        3) concatenate them for they can pass to next layer as an input. 
     """
     # Batch norm for activation maps of natural images
     out_natural = bn_layer(x[torch.logical_not(noise_mask)]) # Batch norm for activation maps of noise images
