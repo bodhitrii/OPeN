@@ -74,7 +74,7 @@ best_acc1 = 0
 
 def main():
     args = parser.parse_args()
-    args.store_name = '_'.join([args.dataset, args.arch, args.loss_type, args.train_rule, args.imb_type, str(args.imb_factor), args.exp_str])
+    args.store_name = '_'.join([args.dataset, args.arch, args.loss_type, args.train_rule,str(args.epochs), args.imb_type, str(args.imb_factor), args.exp_str])
     prepare_folders(args)
     if args.seed is not None:
         random.seed(args.seed)
@@ -147,10 +147,10 @@ def main_worker(gpu, ngpus_per_node, args):
     # ])
     #변화 transform 
     transform_train = transforms.Compose([
-        transforms.RandomHorizontalFlip(),
-        transforms.RandomCrop(32, padding=4),
+        # transforms.RandomHorizontalFlip(),
+        # transforms.RandomCrop(32, padding=4),
         transforms.ToTensor(),
-        CutoutDefault(length=16)
+        CutoutDefault(length=16),
         transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
     ])
 
@@ -171,7 +171,7 @@ def main_worker(gpu, ngpus_per_node, args):
     else:
         warnings.warn('Dataset is not listed')
         return
-    cls_num_list = train_dataset.get_cls_num_list()
+    cls_num_list = torch.FloatTensor(train_dataset.get_cls_num_list())
     print('cls num list:')
     print(cls_num_list)
     args.cls_num_list = cls_num_list
@@ -224,6 +224,10 @@ def main_worker(gpu, ngpus_per_node, args):
             dataset_mean = train_data.mean([0,2,3]) # batch mean per channel
             dataset_std = train_data.var([0,2,3], unbiased=False) # batch std per channel
             image_size = train_data.shape[2]  # Height == Weight
+            balanced_sampler = Equalprob_per_class_Sampler(train_dataset,cls_num_list)
+            balanced_loader = torch.utils.data.DataLoader(
+                train_dataset, batch_size=args.batch_size, shuffle=(balanced_sampler is None),
+                num_workers=args.workers, pin_memory=True, sampler=balanced_sampler)
         else:
             warnings.warn('Sample rule is not listed')
         
@@ -242,7 +246,7 @@ def main_worker(gpu, ngpus_per_node, args):
             # train for one epoch
             train(train_loader, model, criterion, optimizer, epoch, args, log_training, tf_writer)
         else: 
-            oversampling_with_pure_noise_train(train_loader, cls_num_list, dataset_mean, dataset_std, image_size, model, criterion, optimizer, args,log_training, tf_writer, delta = 0.33333)
+            oversampling_with_pure_noise_train(balanced_loader, cls_num_list, dataset_mean, dataset_std, image_size, model, criterion, optimizer, epoch, args,log_training, tf_writer, delta = 0.33333)
 
         # evaluate on validation set
         acc1 = validate(val_loader, model, criterion, epoch, args, log_testing, tf_writer)
@@ -265,7 +269,7 @@ def main_worker(gpu, ngpus_per_node, args):
             'optimizer' : optimizer.state_dict(),
         }, is_best)
 
-def oversampling_with_pure_noise_train(train_loader, cls_num_list, dataset_mean, dataset_std, image_size, model, criterion, optimizer, args,log, tf_writer, delta = 0.33333):
+def oversampling_with_pure_noise_train(train_loader, cls_num_list, dataset_mean, dataset_std, image_size, model, criterion, optimizer, epoch, args,log, tf_writer, delta = 0.33333):
     
     batch_time = AverageMeter('Time', ':6.3f')
     data_time = AverageMeter('Data', ':6.3f')
@@ -276,7 +280,7 @@ def oversampling_with_pure_noise_train(train_loader, cls_num_list, dataset_mean,
     # switch to train mode
     model.train()
     end = time.time()
-    for i, (images, targets) in enumerate(train_loader):
+    for i, (inputs, targets) in enumerate(train_loader):
         # measure data loading time
         data_time.update(time.time() - end)
         # Compute representation ratio
@@ -286,16 +290,16 @@ def oversampling_with_pure_noise_train(train_loader, cls_num_list, dataset_mean,
         noise_probs = (1 - representation_ratio) * delta
         noise_indices = torch.nonzero(torch.bernoulli(noise_probs)).view(-1)
         noise_images = sample_noise_images(image_size=image_size, mean=dataset_mean, std=dataset_std, count=len(noise_indices))
-        images[noise_indices] = noise_images
-        noise_mask = torch.zeros(images.size(0), dtype=torch.bool)
+        inputs[noise_indices] = noise_images
+        noise_mask = torch.zeros(inputs.size(0), dtype=torch.bool)
         noise_mask[noise_indices] = True
         if args.gpu is not None:
             noise_mask = noise_mask.cuda(args.gpu, non_blocking=True)
             targets = targets.cuda(args.gpu, non_blocking=True)
-            images = images.cuda(args.gpu, non_blocking=True)
+            inputs = inputs.cuda(args.gpu, non_blocking=True)
         targets = targets.cuda(0, non_blocking=True)
         # compute output:
-        outputs = model(image = images, noise_mask =noise_mask)
+        outputs = model(inputs = inputs, noise_mask =noise_mask)
         loss = criterion(outputs, targets)
         # compute gradient and do SGD step
         optimizer.zero_grad()
@@ -304,9 +308,9 @@ def oversampling_with_pure_noise_train(train_loader, cls_num_list, dataset_mean,
 
         # measure accuracy and record loss
         acc1, acc5 = accuracy(outputs, targets, topk=(1, 5))
-        losses.update(loss.item(), images.size(0))
-        top1.update(acc1[0], images.size(0))
-        top5.update(acc5[0], images.size(0))
+        losses.update(loss.item(), inputs.size(0))
+        top1.update(acc1[0], inputs.size(0))
+        top5.update(acc5[0], inputs.size(0))
 
         # measure elapsed time
         batch_time.update(time.time() - end)
