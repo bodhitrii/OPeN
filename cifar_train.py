@@ -138,14 +138,6 @@ def main_worker(gpu, ngpus_per_node, args):
     cudnn.benchmark = True
 
     # Data loading code
-#원 transform
-    # transform_train = transforms.Compose([
-    #     transforms.RandomCrop(32, padding=4),
-    #     transforms.RandomHorizontalFlip(),
-    #     transforms.ToTensor(),
-    #     transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-    # ])
-    #변화 transform 
     transform_train = transforms.Compose([
         # transforms.RandomHorizontalFlip(),
         # transforms.RandomCrop(32, padding=4),
@@ -158,9 +150,6 @@ def main_worker(gpu, ngpus_per_node, args):
         transforms.ToTensor(),
         transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
     ])
-
-
-
 
     if args.dataset == 'cifar10':
         train_dataset = IMBALANCECIFAR10(root='./data', imb_type=args.imb_type, imb_factor=args.imb_factor, rand_number=args.rand_number, train=True, download=True, transform=transform_train)
