@@ -3,8 +3,6 @@ import torch.nn as nn
 import torch.nn.init as init
 import torch.nn.functional as F
 from torch.autograd import Variable
-
-import sys
 import numpy as np
 import os
 
@@ -146,3 +144,9 @@ def batch_norm_with_adaptive_parameters(x_noise, adaptive_parameters):
 
 def wide_resnet28_10(decay_epochs=160, num_classes=10):
     return Wide_ResNet(depth=28, widen_factor=10, dropout_rate=0.3, num_classes=num_classes)
+
+def wide_resnet40_10(decay_epochs, num_classes):
+    return Wide_ResNet(depth=40, widen_factor=10, dropout_rate=0.3, num_classes=num_classes)
+
+def wide_resnet40_14(decay_epochs, num_classes):
+    return Wide_ResNet(depth=40, widen_factor=14, dropout_rate=0.3, num_classes=num_classes)
