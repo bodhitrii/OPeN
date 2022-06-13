@@ -265,10 +265,11 @@ def oversampling_with_pure_noise_train(balanced_loader, cls_num_list, dataset_me
         A class balanced loader, which sample each class with equal prob
     cls_num_list : torch.Tensor 
         number of trainning instances per class
-    dataset_mean : torch.FloatTensor of size (#channel:3)
+    dataset_mean : torch.FloatTensor of size: (C) 
     image_size : int (H,W of the input)
     model : torch.nn.Module
     """
+                
     batch_time = AverageMeter('Time', ':6.3f')
     data_time = AverageMeter('Data', ':6.3f')
     losses = AverageMeter('Loss', ':.4e')
