@@ -8,6 +8,30 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix
 from sklearn.utils.multiclass import unique_labels
 
+class Equalprob_per_class_Sampler(torch.utils.data.sampler.Sampler):
+    """sample image from class i out of N classes with probabilty.
+    For doing that, assign a weight to each image which is inversely proportional to its class size.
+    """
+    def __init__(self, dataset, cls_num_list, indices=None, num_samples=None):
+        # if indices is not provided,
+        # all elements in the dataset will be considered
+        self.indices = list(range(len(dataset))) \
+            if indices is None else indices
+            
+        # if num_samples is not provided, 
+        # draw `len(indices)` samples  in each iteration
+        self.num_samples = len(self.indices) \
+        if num_samples is None else self.num_samples
+        per_cls_weights = cls_num_list.sum()/cls_num_list
+        self.weights = per_cls_weights[dataset.targets]
+
+    def __iter__(self):
+        return iter(torch.multinomial(self.weights, self.num_samples, replacement=True).tolist())
+
+    def __len__(self):
+        return self.num_samples
+
+
 class ImbalancedDatasetSampler(torch.utils.data.sampler.Sampler):
 
     def __init__(self, dataset, indices=None, num_samples=None):
