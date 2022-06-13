@@ -11,6 +11,7 @@ from sklearn.utils.multiclass import unique_labels
 class Equalprob_per_class_Sampler(torch.utils.data.sampler.Sampler):
     """sample image from class i out of N classes with probabilty.
     For doing that, assign a weight to each image which is inversely proportional to its class size.
+    (used for OPeN)
     """
     def __init__(self, dataset, cls_num_list, indices=None, num_samples=None):
         # if indices is not provided,
