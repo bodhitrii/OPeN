@@ -143,10 +143,6 @@ def batch_norm_with_adaptive_parameters(x_noise, adaptive_parameters):
     
     return out
     
-# 당장은 코드를 바꿨기에 쓸 수 없음    
-# def darbn_wideresnet_28_10(decay_epochs, num_classes=10):
-#     return Dar_bn(decay_epochs, depth=28, widen_factor=10, dropout_rate=0.3, num_classes=num_classes)
 
-# DAR-BN 해당하는 모델
 def wide_resnet28_10(decay_epochs=160, num_classes=10):
     return Wide_ResNet(depth=28, widen_factor=10, dropout_rate=0.3, num_classes=num_classes)
