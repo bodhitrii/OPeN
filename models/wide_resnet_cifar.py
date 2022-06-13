@@ -91,10 +91,8 @@ class Wide_ResNet(nn.Module):
         return Sequential_multiple_arg(*layers)
 
     def forward(self, inputs, noise_mask):
-        print(inputs.shape)
-        print(noise_mask) #torch.size([128])
-        out = self.conv1(inputs)
-        print(out.shape) #torch.Size([128, 16, 32, 32])
+        # noise_mask : torch.Size([N])
+        out = self.conv1(inputs) #torch.Size([N,C,H,W])
         
         out = self.layer1(out, noise_mask)
         out = self.layer2(out, noise_mask)
