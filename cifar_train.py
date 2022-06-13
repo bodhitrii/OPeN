@@ -28,11 +28,11 @@ model_names = sorted(name for name in models.__dict__
 
 parser = argparse.ArgumentParser(description='PyTorch Cifar Training')
 parser.add_argument('--dataset', default='cifar10', help='dataset setting')
-parser.add_argument('-a', '--arch', metavar='ARCH', default='resnet32',
+parser.add_argument('-a', '--arch', metavar='ARCH', default='wide_resnet28_10',
                     choices=model_names,
                     help='model architecture: ' +
                         ' | '.join(model_names) +
-                        ' (default: resnet32)')
+                        ' (default: wide_resnet28_10)')
 parser.add_argument('--loss_type', default="CE", type=str, help='loss type')
 parser.add_argument('--imb_type', default="exp", type=str, help='imbalance type')
 parser.add_argument('--imb_factor', default=0.01, type=float, help='imbalance factor')
