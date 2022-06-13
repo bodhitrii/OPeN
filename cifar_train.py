@@ -213,6 +213,7 @@ def main_worker(gpu, ngpus_per_node, args):
             dataset_mean = train_data.mean([0,2,3]) # batch mean per channel
             dataset_std = train_data.var([0,2,3], unbiased=False) # batch std per channel
             image_size = train_data.shape[2]  # Height == Weight
+            # balanced sampling, which samples each class with equal probability
             balanced_sampler = Equalprob_per_class_Sampler(train_dataset,cls_num_list)
             balanced_loader = torch.utils.data.DataLoader(
                 train_dataset, batch_size=args.batch_size, shuffle=(balanced_sampler is None),
@@ -258,8 +259,16 @@ def main_worker(gpu, ngpus_per_node, args):
             'optimizer' : optimizer.state_dict(),
         }, is_best)
 
-def oversampling_with_pure_noise_train(train_loader, cls_num_list, dataset_mean, dataset_std, image_size, model, criterion, optimizer, epoch, args,log, tf_writer, delta = 0.33333):
-    
+def oversampling_with_pure_noise_train(balanced_loader, cls_num_list, dataset_mean, dataset_std, image_size, model, criterion, optimizer, epoch, args,log, tf_writer, delta = 0.33333):
+    """ Trains model for one epoch according to the OPeN scheme. 
+    balanced_loader : torch.utils.data.Dataloader
+        A class balanced loader, which sample each class with equal prob
+    cls_num_list : torch.Tensor 
+        number of trainning instances per class
+    dataset_mean : torch.FloatTensor of size (#channel:3)
+    image_size : int (H,W of the input)
+    model : torch.nn.Module
+    """
     batch_time = AverageMeter('Time', ':6.3f')
     data_time = AverageMeter('Data', ':6.3f')
     losses = AverageMeter('Loss', ':.4e')
@@ -333,6 +342,16 @@ def sample_noise_images(image_size, mean, std, count):
     return pure_noise_images
 
 def train(train_loader, model, criterion, optimizer, epoch, args, log, tf_writer):
+    """
+        OPeN defers the scheme to the last phase of training, when learning rate decays.
+        until the phase of OPeN, use default training function. 
+        train function uses the same model as in the model in over_sampling_with_pure_noise_train function. 
+        Instead, Passing the noise_mask value of whole training instance as False let the model works as non OPeN scheme model. 
+        
+        train_loader: torch.util.data.DataLoader
+        model : torch.nn.Module
+    
+    """
     batch_time = AverageMeter('Time', ':6.3f')
     data_time = AverageMeter('Data', ':6.3f')
     losses = AverageMeter('Loss', ':.4e')
@@ -398,6 +417,9 @@ def train(train_loader, model, criterion, optimizer, epoch, args, log, tf_writer
     tf_writer.add_scalar('lr', optimizer.param_groups[-1]['lr'], epoch)
 
 def validate(val_loader, model, criterion, epoch, args, log=None, tf_writer=None, flag='val'):
+    """
+    As in train function, set the noise_mask of whole instances to False. 
+    """
     batch_time = AverageMeter('Time', ':6.3f')
     losses = AverageMeter('Loss', ':.4e')
     top1 = AverageMeter('Acc@1', ':6.2f')
