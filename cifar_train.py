@@ -279,7 +279,7 @@ def oversampling_with_pure_noise_train(balanced_loader, cls_num_list, dataset_me
     # switch to train mode
     model.train()
     end = time.time()
-    for i, (inputs, targets) in enumerate(train_loader):
+    for i, (inputs, targets) in enumerate(balanced_loader):
         # measure data loading time
         data_time.update(time.time() - end)
         # Compute representation ratio
