@@ -6,7 +6,8 @@ from torch.autograd import Variable
 import numpy as np
 import os
 
-__all__ = ['wide_resnet28_10']
+__all__ = ['wide_resnet28_10','wide_resnet40_10','wide_resnet40_14']
+
 
 def _weights_init(m):
     classname = m.__class__.__name__
