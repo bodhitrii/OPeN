@@ -41,3 +41,27 @@ python cifar_train.py --gpu 0 --imb_type exp --imb_factor 0.01 --loss_type CE --
 
 
 ### Results
+
+
+
+
+
+### Reference
+
+```javascript
+@article{DBLP:journals/corr/IoffeS15,
+  author    = {Sergey Ioffe and
+               Christian Szegedy},
+  title     = {Batch Normalization: Accelerating Deep Network Training by Reducing
+               Internal Covariate Shift},
+  journal   = {CoRR},
+  volume    = {abs/1502.03167},
+  year      = {2015},
+  url       = {http://arxiv.org/abs/1502.03167},
+  eprinttype = {arXiv},
+  eprint    = {1502.03167},
+  timestamp = {Mon, 13 Aug 2018 16:47:06 +0200},
+  biburl    = {https://dblp.org/rec/journals/corr/IoffeS15.bib},
+  bibsource = {dblp computer science bibliography, https://dblp.org}
+}
+```
