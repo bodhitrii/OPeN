@@ -36,7 +36,7 @@ For comparison, other loss_type & train_rule(train methods) are prepared in the 
 python cifar_train.py --gpu 0 --imb_type exp --imb_factor 0.01 --loss_type CE --train_rule None --arch wide_resnet28_10
 ```
 
-- To train the ERM Loss along with DAR-BN on long-tailed imbalance with ratio of 100
+- To train the ERM Loss along with OPeN on long-tailed imbalance with ratio of 100
 ```javascript
 python cifar_train.py --gpu 0 --imb_type exp --imb_factor 0.01 --loss_type CE --train_rule OPeN --arch wide_resnet28_10
 ```
