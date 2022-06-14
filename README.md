@@ -8,7 +8,7 @@ This is the unofficial implementation of OPeN in the paper [Pure Noise to the Re
 
 No official implementation code yet exists
 
-Code strucutres are similar with the code in [https://github.com/kaidic/LDAM-DRW.git](https://github.com/kaidic/LDAM-DRW.git)
+Code structures are similar with the code in [https://github.com/kaidic/LDAM-DRW.git](https://github.com/kaidic/LDAM-DRW.git)
 
 
 ### How to run the code
