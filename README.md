@@ -44,19 +44,20 @@ python cifar_train.py --gpu 0 --imb_type exp --imb_factor 0.01 --loss_type CE --
 ### Reference
 
 ```javascript
-@article{DBLP:journals/corr/IoffeS15,
-  author    = {Sergey Ioffe and
-               Christian Szegedy},
-  title     = {Batch Normalization: Accelerating Deep Network Training by Reducing
-               Internal Covariate Shift},
+@article{DBLP:journals/corr/abs-2112-08810,
+  author    = {Shiran Zada and
+               Itay Benou and
+               Michal Irani},
+  title     = {Pure Noise to the Rescue of Insufficient Data: Improving Imbalanced
+               Classification by Training on Random Noise Images},
   journal   = {CoRR},
-  volume    = {abs/1502.03167},
-  year      = {2015},
-  url       = {http://arxiv.org/abs/1502.03167},
+  volume    = {abs/2112.08810},
+  year      = {2021},
+  url       = {https://arxiv.org/abs/2112.08810},
   eprinttype = {arXiv},
-  eprint    = {1502.03167},
-  timestamp = {Mon, 13 Aug 2018 16:47:06 +0200},
-  biburl    = {https://dblp.org/rec/journals/corr/IoffeS15.bib},
+  eprint    = {2112.08810},
+  timestamp = {Mon, 03 Jan 2022 15:45:35 +0100},
+  biburl    = {https://dblp.org/rec/journals/corr/abs-2112-08810.bib},
   bibsource = {dblp computer science bibliography, https://dblp.org}
 }
 ```
