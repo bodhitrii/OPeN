@@ -3,7 +3,6 @@ import os
 import random
 import time
 import warnings
-import sys
 import numpy as np
 import torch
 import torch.nn as nn
@@ -21,6 +20,7 @@ from utils import *
 from imbalance_cifar import IMBALANCECIFAR10, IMBALANCECIFAR100
 from losses import LDAMLoss, FocalLoss
 import os
+import sys
 
 model_names = sorted(name for name in models.__dict__
     if name.islower() and not name.startswith("__")
@@ -175,6 +175,11 @@ def main_worker(gpu, ngpus_per_node, args):
         val_dataset, batch_size=100, shuffle=False,
         num_workers=args.workers, pin_memory=True)
 
+    balanced_sampler = Equalprob_per_class_Sampler(train_dataset,cls_num_list)
+    balanced_loader = torch.utils.data.DataLoader(
+                train_dataset, batch_size=args.batch_size, shuffle=(balanced_sampler is None),
+                num_workers=args.workers, pin_memory=True, sampler=balanced_sampler)
+
     # init log for training
     log_training = open(os.path.join(args.root_log, args.store_name, 'log_train.csv'), 'w')
     log_testing = open(os.path.join(args.root_log, args.store_name, 'log_test.csv'), 'w')
@@ -214,10 +219,7 @@ def main_worker(gpu, ngpus_per_node, args):
             dataset_std = train_data.var([0,2,3], unbiased=False) # batch std per channel
             image_size = train_data.shape[2]  # Height == Weight
             # balanced sampling, which samples each class with equal probability
-            balanced_sampler = Equalprob_per_class_Sampler(train_dataset,cls_num_list)
-            balanced_loader = torch.utils.data.DataLoader(
-                train_dataset, batch_size=args.batch_size, shuffle=(balanced_sampler is None),
-                num_workers=args.workers, pin_memory=True, sampler=balanced_sampler)
+
         else:
             warnings.warn('Sample rule is not listed')
         
@@ -231,13 +233,18 @@ def main_worker(gpu, ngpus_per_node, args):
             warnings.warn('Loss type is not listed')
             return
 
-        open_start_epoch = int(args.epochs - 41)
-        if epoch <= open_start_epoch:
+        open_start_epoch = int(args.epochs - 40)
+        if epoch < open_start_epoch:
             # train for one epoch
             train(train_loader, model, criterion, optimizer, epoch, args, log_training, tf_writer)
-        else: 
-            oversampling_with_pure_noise_train(balanced_loader, cls_num_list, dataset_mean, dataset_std, image_size, model, criterion, optimizer, epoch, args,log_training, tf_writer, delta = 0.33333)
+            # print(model.state_dict().keys())
+            # sys.exit()
+            # print(model.state_dict()['bn1.weight'])
 
+        else: 
+            # print('shouldnot change')
+            oversampling_with_pure_noise_train(balanced_loader, cls_num_list, dataset_mean, dataset_std, image_size, model, criterion, optimizer, epoch, args,log_training, tf_writer, delta = 0.33333)
+            # print(model.state_dict()['bn1.weight'])
         # evaluate on validation set
         acc1 = validate(val_loader, model, criterion, epoch, args, log_testing, tf_writer)
 
@@ -259,7 +266,7 @@ def main_worker(gpu, ngpus_per_node, args):
             'optimizer' : optimizer.state_dict(),
         }, is_best)
 
-def oversampling_with_pure_noise_train(balanced_loader, cls_num_list, dataset_mean, dataset_std, image_size, model, criterion, optimizer, epoch, args,log, tf_writer, delta = 0.33333):
+def oversampling_with_pure_noise_train(balanced_loader, cls_num_list, dataset_mean, dataset_std, image_size, model, criterion, optimizer, epoch, args,log, tf_writer, delta = 0.3333):
     """ Trains model for one epoch according to the OPeN scheme. 
     balanced_loader : torch.utils.data.Dataloader
         A class balanced loader, which sample each class with equal prob
@@ -298,7 +305,7 @@ def oversampling_with_pure_noise_train(balanced_loader, cls_num_list, dataset_me
             inputs = inputs.cuda(args.gpu, non_blocking=True)
         targets = targets.cuda(0, non_blocking=True)
         # compute output:
-        outputs = model(inputs = inputs, noise_mask =noise_mask)
+        outputs = model(inputs=inputs, noise_mask=noise_mask)
         loss = criterion(outputs, targets)
         # compute gradient and do SGD step
         optimizer.zero_grad()
@@ -322,7 +329,7 @@ def oversampling_with_pure_noise_train(balanced_loader, cls_num_list, dataset_me
                       'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
                       'Prec@1 {top1.val:.3f} ({top1.avg:.3f})\t'
                       'Prec@5 {top5.val:.3f} ({top5.avg:.3f})'.format(
-                epoch, i, len(train_loader), batch_time=batch_time,
+                epoch, i, len(balanced_loader), batch_time=batch_time,
                 data_time=data_time, loss=losses, top1=top1, top5=top5, lr=optimizer.param_groups[-1]['lr'] * 0.1))  # TODO
             print(output)
             log.write(output + '\n')
@@ -377,10 +384,10 @@ def train(train_loader, model, criterion, optimizer, epoch, args, log, tf_writer
         targets = targets.cuda(args.gpu, non_blocking=True)
 
         # compute outputsssss
-        print(inputs.shape) #torch.Size([128, 3, 32, 32])
+        # print(inputs.shape) #torch.Size([128, 3, 32, 32])
 
         # compute output:
-        outputs = model(inputs , noise_mask )
+        outputs = model(inputs, noise_mask)
 
         loss = criterion(outputs, targets)
 
@@ -441,7 +448,7 @@ def validate(val_loader, model, criterion, epoch, args, log=None, tf_writer=None
             targets = targets.cuda(0, non_blocking=True)
 
             # compute outputsssss
-            print(inputs.shape) #torch.Size([128, 3, 32, 32])
+            # print(inputs.shape) #torch.Size([128, 3, 32, 32])
 
             # compute output:
             outputs = model(inputs, noise_mask)
@@ -505,3 +512,5 @@ def adjust_learning_rate(optimizer, epoch, args):
 
 if __name__ == '__main__':
     main()
+
+
