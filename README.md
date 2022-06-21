@@ -4,7 +4,7 @@ Shiran Zada, Michal Irani
 
 ------
 
-This is the unofficial implementation of OPeN in the paper [Pure Noise to the Rescue of Insufficient Data: Improving Imbalanced Classification by Training on Random Noise Images](https://arxiv.org/pdf/2112.08810.pdf) (NeurIPS 2022 spotlight) in pytorch.
+This is the unofficial implementation of OPeN in the paper [Pure Noise to the Rescue of Insufficient Data: Improving Imbalanced Classification by Training on Random Noise Images](https://arxiv.org/pdf/2112.08810.pdf) (ICML 2022 spotlight) in pytorch.
 
 No official implementation code yet exists
 
