@@ -138,13 +138,33 @@ def main_worker(gpu, ngpus_per_node, args):
     cudnn.benchmark = True
 
     # Data loading code
+    
+    if DATASET == 'cifar100':     
+        mean = torch.tensor([0.5071, 0.4867, 0.4408])     
+        std = torch.tensor([0.2675, 0.2565, 0.2761]) 
+    elif DATASET == 'cifar10':     
+        mean = torch.tensor([0.4914, 0.4822, 0.4465])     
+        std = torch.tensor([0.2023, 0.1994, 0.2010])
+        
     transform_train = transforms.Compose([
-        # transforms.RandomHorizontalFlip(),
-        # transforms.RandomCrop(32, padding=4),
-        transforms.ToTensor(),
-        CutoutDefault(length=16),
-        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+        transforms.RandomCrop(32, padding=4),
+        transforms.RandomApply([transforms.ColorJitter(0.4, 0.4, 0.4, 0.1)], p=0.8),
+        transforms.RandomGrayscale(p=0.2),         
+        transforms.RandomApply([GaussianBlur([.1, 2.])], p=0.2),         
+        transforms.RandomHorizontalFlip(),         
+        transforms.ToTensor(),         
+        Cutout(n_holes=1, length=16),
+        transforms.Normalize(mean=mean, var=var)
     ])
+    
+    
+#     transform_train = transforms.Compose([
+#         # transforms.RandomHorizontalFlip(),
+#         # transforms.RandomCrop(32, padding=4),
+#         transforms.ToTensor(),
+#         CutoutDefault(length=16),
+#         transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+#     ])
 
     transform_val = transforms.Compose([
         transforms.ToTensor(),
