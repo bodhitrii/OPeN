@@ -199,29 +199,83 @@ def accuracy(output, target, topk=(1,)):
             res.append(correct_k.mul_(100.0 / batch_size))
         return res
 
-# Data loading code
-class CutoutDefault(object):
-    """
-    Reference : https://github.com/quark0/darts/blob/master/cnn/utils.py
-    """
-    def __init__(self, length):
-        self.length = length
+# # Data loading code
+# class CutoutDefault(object):
+#     """
+#     Reference : https://github.com/quark0/darts/blob/master/cnn/utils.py
+#     """
+#     def __init__(self, length):
+#         self.length = length
 
-    def __call__(self, img):
-        # print(img) #<PIL.Image.Image image mode=RGB size=32x32 at 0x7F16501E84C0>
-        # print(img.shape) #torch.Size([3, 32, 32])
-        h= img.shape[1]
-        w= img.shape[2]
-        mask = np.ones((h, w), np.float32)
-        y = np.random.randint(h)
-        x = np.random.randint(w)
-        y1 = np.clip(y - self.length // 2, 0, h)
-        y2 = np.clip(y + self.length // 2, 0, h)
-        x1 = np.clip(x - self.length // 2, 0, w)
-        x2 = np.clip(x + self.length // 2, 0, w)
+#     def __call__(self, img):
+#         # print(img) #<PIL.Image.Image image mode=RGB size=32x32 at 0x7F16501E84C0>
+#         # print(img.shape) #torch.Size([3, 32, 32])
+#         h= img.shape[1]
+#         w= img.shape[2]
+#         mask = np.ones((h, w), np.float32)
+#         y = np.random.randint(h)
+#         x = np.random.randint(w)
+#         y1 = np.clip(y - self.length // 2, 0, h)
+#         y2 = np.clip(y + self.length // 2, 0, h)
+#         x1 = np.clip(x - self.length // 2, 0, w)
+#         x2 = np.clip(x + self.length // 2, 0, w)
 
-        mask[y1: y2, x1: x2] = 0.
-        mask = torch.from_numpy(mask)
-        mask = mask.expand_as(img)
-        img *= mask
-        return img
+#         mask[y1: y2, x1: x2] = 0.
+#         mask = torch.from_numpy(mask)
+#         mask = mask.expand_as(img)
+#         img *= mask
+#         return img
+ 
+# shiran zada 
+ class Cutout(object):
+"""Randomly mask out one or more patches from an image.
+Args:
+n_holes (int): Number of patches to cut out of each image.
+length (int): The length (in pixels) of each square patch.
+"""
+def __init__(self, n_holes, length):
+    self.n_holes = n_holes
+    self.length = length
+
+def __call__(self, img):
+"""
+Args:
+img (Tensor): Tensor image of size (C, H, W).
+Returns:
+Tensor: Image with n_holes of dimension length x length cut out of it.
+"""
+    h = img.size(1)
+    w = img.size(2)
+
+    mask = np.ones((h, w), np.float32)
+
+    for n in range(self.n_holes):
+    y = torch.randint(low=0, high=h, size=(1,))
+    x = torch.randint(low=0, high=w, size=(1,))
+
+    y1 = np.clip(y - self.length // 2, 0, h)
+    y2 = np.clip(y + self.length // 2, 0, h)
+    x1 = np.clip(x - self.length // 2, 0, w)
+    x2 = np.clip(x + self.length // 2, 0, w)
+
+    mask[y1: y2, x1: x2] = 0.
+
+    mask = torch.from_numpy(mask)
+    mask = mask.expand_as(img)
+    img = img * mask
+
+    return img
+    
+    
+class GaussianBlur(object):
+"""Gaussian blur augmentation in SimCLR https://arxiv.org/abs/2002.05709"""
+
+def __init__(self, sigma=[.1, 2.]):
+self.sigma = sigma
+
+def __call__(self, x):
+sigma = random.uniform(self.sigma[0], self.sigma[1])
+x = x.filter(PIL.ImageFilter.GaussianBlur(radius=sigma))
+return x
+    
+ 
