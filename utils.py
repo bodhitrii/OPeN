@@ -266,7 +266,7 @@ class Cutout(object):
             mask = mask.expand_as(img)
             img = img * mask
 
-            return img
+        return img
     
     
 class GaussianBlur(object):
