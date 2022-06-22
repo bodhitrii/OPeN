@@ -40,6 +40,12 @@ python cifar_train.py --gpu 0 --imb_type exp --imb_factor 0.01 --loss_type CE --
 ```javascript
 python cifar_train.py --gpu 0 --imb_type exp --imb_factor 0.01 --loss_type CE --train_rule OPeN --arch wide_resnet28_10
 ```
+### Results
+ | |Baseline (ERM) | Logit adjustment loss |
+ | :---:  | :---: |:---: |
+ |CIFAR-10 LT | 2 | 80.74 |
+ |CIFAR-100 LT| 3 | 41.58 |
+
 
 ### Reference
 
