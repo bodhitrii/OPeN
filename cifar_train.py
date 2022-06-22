@@ -137,12 +137,14 @@ def main_worker(gpu, ngpus_per_node, args):
 
     cudnn.benchmark = True
 
+
+
     # Data loading code
     
-    if DATASET == 'cifar100':     
+    if args.dataset == 'cifar100':     
         mean = torch.tensor([0.5071, 0.4867, 0.4408])     
         std = torch.tensor([0.2675, 0.2565, 0.2761]) 
-    elif DATASET == 'cifar10':     
+    elif args.dataset == 'cifar10': 
         mean = torch.tensor([0.4914, 0.4822, 0.4465])     
         std = torch.tensor([0.2023, 0.1994, 0.2010])
         
@@ -154,7 +156,7 @@ def main_worker(gpu, ngpus_per_node, args):
         transforms.RandomHorizontalFlip(),         
         transforms.ToTensor(),         
         Cutout(n_holes=1, length=16),
-        transforms.Normalize(mean=mean, var=var)
+        transforms.Normalize(mean=mean, std=std)
     ])
     
     
@@ -168,25 +170,25 @@ def main_worker(gpu, ngpus_per_node, args):
 
     transform_val = transforms.Compose([
         transforms.ToTensor(),
-        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+        transforms.Normalize(mean=mean,std=std),
     ])
 
     if args.dataset == 'cifar10':
-        train_dataset = IMBALANCECIFAR10(root='./data', imb_type=args.imb_type, imb_factor=args.imb_factor, rand_number=args.rand_number, train=True, download=True, transform=transform_train)
-        val_dataset = datasets.CIFAR10(root='./data', train=False, download=True, transform=transform_val)
+        train_dataset = IMBALANCECIFAR10(root='../data', imb_type=args.imb_type, imb_factor=args.imb_factor, rand_number=args.rand_number, train=True, download=True, transform=transform_train)
+        val_dataset = datasets.CIFAR10(root='../data', train=False, download=True, transform=transform_val)
     elif args.dataset == 'cifar100':
-        train_dataset = IMBALANCECIFAR100(root='./data', imb_type=args.imb_type, imb_factor=args.imb_factor, rand_number=args.rand_number, train=True, download=True, transform=transform_train)
-        val_dataset = datasets.CIFAR100(root='./data', train=False, download=True, transform=transform_val)
+        train_dataset = IMBALANCECIFAR100(root='../data', imb_type=args.imb_type, imb_factor=args.imb_factor, rand_number=args.rand_number, train=True, download=True, transform=transform_train)
+        val_dataset = datasets.CIFAR100(root='../data', train=False, download=True, transform=transform_val)
     else:
         warnings.warn('Dataset is not listed')
         return
+        
     cls_num_list = torch.FloatTensor(train_dataset.get_cls_num_list())
     print('cls num list:')
     print(cls_num_list)
     args.cls_num_list = cls_num_list
     
     train_sampler = None
-        
     train_loader = torch.utils.data.DataLoader(
         train_dataset, batch_size=args.batch_size, shuffle=(train_sampler is None),
         num_workers=args.workers, pin_memory=True, sampler=train_sampler)
@@ -235,8 +237,8 @@ def main_worker(gpu, ngpus_per_node, args):
             per_cls_weights = None
             train_data = torch.DoubleTensor(train_dataset.data) #torch.shape([12406, 32, 32, 3])[N,H,W,C]
             train_data = train_data.permute(0, 3, 1, 2)#torch.shape([12406, 3, 32, 32, 3])[N,C,H,W]
-            dataset_mean = train_data.mean([0,2,3]) # batch mean per channel
-            dataset_std = train_data.var([0,2,3], unbiased=False) # batch std per channel
+            # dataset_mean = train_data.mean([0,2,3])/255 # batch mean per channel
+            # dataset_std = train_data.var([0,2,3], unbiased=False)/255 # batch std per channel
             image_size = train_data.shape[2]  # Height == Weight
             # balanced sampling, which samples each class with equal probability
 
@@ -263,7 +265,7 @@ def main_worker(gpu, ngpus_per_node, args):
 
         else: 
             # print('shouldnot change')
-            oversampling_with_pure_noise_train(balanced_loader, cls_num_list, dataset_mean, dataset_std, image_size, model, criterion, optimizer, epoch, args,log_training, tf_writer, delta = 0.33333)
+            oversampling_with_pure_noise_train(balanced_loader, cls_num_list, mean, std, image_size, model, criterion, optimizer, epoch, args,log_training, tf_writer, delta = 0.33333)
             # print(model.state_dict()['bn1.weight'])
         # evaluate on validation set
         acc1 = validate(val_loader, model, criterion, epoch, args, log_testing, tf_writer)
@@ -286,7 +288,7 @@ def main_worker(gpu, ngpus_per_node, args):
             'optimizer' : optimizer.state_dict(),
         }, is_best)
 
-def oversampling_with_pure_noise_train(balanced_loader, cls_num_list, dataset_mean, dataset_std, image_size, model, criterion, optimizer, epoch, args,log, tf_writer, delta = 0.3333):
+def oversampling_with_pure_noise_train(balanced_loader, cls_num_list, mean, std, image_size, model, criterion, optimizer, epoch, args,log, tf_writer, delta = 0.3333):
     """ Trains model for one epoch according to the OPeN scheme. 
     balanced_loader : torch.utils.data.Dataloader
         A class balanced loader, which sample each class with equal prob
@@ -315,7 +317,7 @@ def oversampling_with_pure_noise_train(balanced_loader, cls_num_list, dataset_me
         # Compute probabilities to replace natural image with pure noise image
         noise_probs = (1 - representation_ratio) * delta
         noise_indices = torch.nonzero(torch.bernoulli(noise_probs)).view(-1)
-        noise_images = sample_noise_images(image_size=image_size, mean=dataset_mean, std=dataset_std, count=len(noise_indices))
+        noise_images = sample_noise_images(image_size=image_size, mean=mean, std=std, count=len(noise_indices))
         inputs[noise_indices] = noise_images
         noise_mask = torch.zeros(inputs.size(0), dtype=torch.bool)
         noise_mask[noise_indices] = True

@@ -2,11 +2,13 @@ import torch
 import shutil
 import os
 import numpy as np
+import random
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix
-from sklearn.utils.multiclass import unique_labels
+import PIL
+
 
 class Equalprob_per_class_Sampler(torch.utils.data.sampler.Sampler):
     """sample image from class i out of N classes with probabilty.
@@ -226,56 +228,56 @@ def accuracy(output, target, topk=(1,)):
 #         img *= mask
 #         return img
  
-# shiran zada 
- class Cutout(object):
-"""Randomly mask out one or more patches from an image.
-Args:
-n_holes (int): Number of patches to cut out of each image.
-length (int): The length (in pixels) of each square patch.
-"""
-def __init__(self, n_holes, length):
-    self.n_holes = n_holes
-    self.length = length
 
-def __call__(self, img):
-"""
-Args:
-img (Tensor): Tensor image of size (C, H, W).
-Returns:
-Tensor: Image with n_holes of dimension length x length cut out of it.
-"""
-    h = img.size(1)
-    w = img.size(2)
+class Cutout(object):
+    """Randomly mask out one or more patches from an image.
+    Args:
+    n_holes (int): Number of patches to cut out of each image.
+    length (int): The length (in pixels) of each square patch.
+    """
+    def __init__(self, n_holes, length):
+        self.n_holes = n_holes
+        self.length = length
 
-    mask = np.ones((h, w), np.float32)
+    def __call__(self, img):
+        """
+        Args:
+        img (Tensor): Tensor image of size (C, H, W).
+        Returns:
+        Tensor: Image with n_holes of dimension length x length cut out of it.
+        """
+        h = img.size(1)
+        w = img.size(2)
 
-    for n in range(self.n_holes):
-    y = torch.randint(low=0, high=h, size=(1,))
-    x = torch.randint(low=0, high=w, size=(1,))
+        mask = np.ones((h, w), np.float32)
 
-    y1 = np.clip(y - self.length // 2, 0, h)
-    y2 = np.clip(y + self.length // 2, 0, h)
-    x1 = np.clip(x - self.length // 2, 0, w)
-    x2 = np.clip(x + self.length // 2, 0, w)
+        for n in range(self.n_holes):
+            y = torch.randint(low=0, high=h, size=(1,))
+            x = torch.randint(low=0, high=w, size=(1,))
 
-    mask[y1: y2, x1: x2] = 0.
+            y1 = np.clip(y - self.length // 2, 0, h)
+            y2 = np.clip(y + self.length // 2, 0, h)
+            x1 = np.clip(x - self.length // 2, 0, w)
+            x2 = np.clip(x + self.length // 2, 0, w)
 
-    mask = torch.from_numpy(mask)
-    mask = mask.expand_as(img)
-    img = img * mask
+            mask[y1: y2, x1: x2] = 0.
 
-    return img
+            mask = torch.from_numpy(mask)
+            mask = mask.expand_as(img)
+            img = img * mask
+
+            return img
     
     
 class GaussianBlur(object):
-"""Gaussian blur augmentation in SimCLR https://arxiv.org/abs/2002.05709"""
+    """Gaussian blur augmentation in SimCLR https://arxiv.org/abs/2002.05709"""
 
-def __init__(self, sigma=[.1, 2.]):
-self.sigma = sigma
+    def __init__(self, sigma=[.1, 2.]):
+        self.sigma = sigma
 
-def __call__(self, x):
-sigma = random.uniform(self.sigma[0], self.sigma[1])
-x = x.filter(PIL.ImageFilter.GaussianBlur(radius=sigma))
-return x
-    
+    def __call__(self, x):
+        sigma = random.uniform(self.sigma[0], self.sigma[1])
+        x = x.filter(PIL.ImageFilter.GaussianBlur(radius=sigma))
+        return x
+        
  
