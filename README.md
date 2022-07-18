@@ -43,8 +43,8 @@ python cifar_train.py --gpu 0 --imb_type exp --imb_factor 0.01 --loss_type CE --
 ### Results
  | |Baseline (ERM) | OPeN + AA |
  | :---:  | :---: |:---: |
- |CIFAR-10 LT | 79.6 | 85.25 |
- |CIFAR-100 LT| 3 | 3 |
+ |CIFAR-10 LT | | 85.25 |
+ |CIFAR-100 LT| 3 | 79.6 |
 
 
 ### Reference
